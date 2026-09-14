@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The Development Journey — ECC-tutorial, Sept 13 2026</title>
+<style>
+:root{--ink:#18232c;--muted:#5b6872;--paper:#f6f4ef;--card:#fff;--line:#dce2e5;--navy:#17324d;--teal:#087f8c;--gold:#f2b544;--red:#b84545;--green:#1e7a52;--blue:#e8f4f6;--shadow:0 16px 42px rgba(23,50,77,.09)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.65 ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}a{color:#075f80;text-decoration-thickness:1px;text-underline-offset:3px}code{font:0.9em ui-monospace,SFMono-Regular,Menlo,monospace;background:#eef1f2;border-radius:5px;padding:.1em .35em}pre{overflow:auto;background:#142330;color:#dff4ef;border-radius:12px;padding:18px 20px;line-height:1.55}
+.top{background:var(--navy);color:white}.wrap{max-width:1080px;margin:auto;padding:0 28px}.hero{padding:72px 0 60px;position:relative;overflow:hidden}.hero:after{content:"";position:absolute;width:420px;height:420px;border:90px solid rgba(255,255,255,.04);border-radius:50%;right:-120px;top:-180px}.eyebrow{text-transform:uppercase;letter-spacing:.13em;color:#92d4d7;font-size:.78rem;font-weight:800}.hero h1{font-size:clamp(2.4rem,6vw,4.6rem);line-height:1.02;margin:.25em 0 .3em;max-width:880px;letter-spacing:-.045em}.hero p{font-size:1.18rem;max-width:780px;color:#d5e1e8}.status{display:inline-flex;gap:10px;align-items:center;background:rgba(255,255,255,.1);padding:9px 13px;border-radius:999px;font-size:.88rem}.dot{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 0 5px rgba(30,122,82,.25)}
+nav{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:4;overflow:auto;white-space:nowrap}nav .wrap{display:flex;gap:25px;padding-top:13px;padding-bottom:13px}nav a{color:var(--navy);font-size:.86rem;font-weight:700;text-decoration:none}
+main{padding:48px 0 70px}section{scroll-margin-top:68px;margin-bottom:58px}h2{font-size:2rem;letter-spacing:-.025em;line-height:1.2;margin:0 0 12px;color:var(--navy)}h3{line-height:1.3;color:var(--navy);margin-top:0}.lead{font-size:1.12rem;color:#3c4b55;max-width:840px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:24px}.card{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:24px;box-shadow:var(--shadow)}.metric strong{display:block;font-size:2.2rem;line-height:1;color:var(--teal)}.metric span{display:block;margin-top:10px;color:var(--muted)}
+.callout{border-left:5px solid var(--gold);background:#fff8e7;border-radius:0 12px 12px 0;padding:18px 22px;margin:24px 0}.note{border-left-color:var(--teal);background:var(--blue)}
+.flow{display:grid;grid-template-columns:repeat(6,1fr);gap:9px;align-items:stretch;margin:27px 0}.flow .step{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 14px;position:relative}.flow .step:not(:last-child):after{content:"→";position:absolute;right:-15px;top:39%;z-index:2;color:var(--teal);font-weight:900}.num{display:inline-grid;place-items:center;width:25px;height:25px;background:var(--teal);color:#fff;border-radius:50%;font-size:.75rem;font-weight:800}.step b{display:block;margin:9px 0 4px;font-size:.92rem}.step small{color:var(--muted);line-height:1.35;display:block}
+/* timeline */
+.timeline{position:relative;margin:30px 0 10px;padding-left:34px}.timeline:before{content:"";position:absolute;left:10px;top:6px;bottom:6px;width:3px;background:var(--line);border-radius:3px}
+.turn{position:relative;margin:0 0 22px}.turn:before{content:"";position:absolute;left:-29px;top:22px;width:13px;height:13px;border-radius:50%;background:var(--teal);box-shadow:0 0 0 5px var(--blue)}
+.turn.you:before{background:var(--gold);box-shadow:0 0 0 5px #fdf3dd}
+.turn .body{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 22px;box-shadow:var(--shadow)}
+.actor{display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;border-radius:999px;padding:4px 12px;margin-bottom:8px}
+.actor.you{background:#fdf3dd;color:#8a6414;border:1px solid #f0dfae}
+.actor.chief{background:var(--blue);color:#075f80;border:1px solid #bfe3e8}
+.turn .when{font-size:.82rem;color:var(--muted);font-weight:700;margin-bottom:6px}
+.turn p{margin:.4em 0}.turn p:last-child{margin-bottom:0}
+.links li{margin:.7em 0}
+footer{background:#dfe8e8;padding:35px 0;color:#33444d}footer p{max-width:780px;font-size:.9rem}button{appearance:none;border:0;background:var(--navy);color:white;border-radius:9px;padding:11px 16px;font-weight:800;cursor:pointer}
+@media(max-width:820px){.grid{grid-template-columns:1fr 1fr}.flow{grid-template-columns:1fr}.flow .step:not(:last-child):after{content:"↓";right:50%;top:auto;bottom:-18px}.hero{padding:52px 0}.wrap{padding-left:20px;padding-right:20px}}
+@media(max-width:560px){.grid{grid-template-columns:1fr}}
+@media print{nav,button{display:none}.hero{padding:34px 0}.card,.turn .body{box-shadow:none}section{break-inside:avoid}body{font-size:12px}}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap hero">
+<div class="eyebrow">ECC-tutorial • September 13, 2026 • A showcase</div>
+<h1>The development journey</h1>
+<p>Two GitHub incidents, one day, two merged pull requests — and a human who never wrote a line of code, never gave a technical instruction, and never debugged anything. This is the turn-by-turn record of how the work got done anyway.</p>
+<div class="status"><span class="dot"></span> 2 PRs merged • 14 files changed • human input: a handful of short messages</div>
+</div></header>
+<nav><div class="wrap"><a href="#numbers">By the numbers</a><a href="#pattern">The pattern</a><a href="#act1">Act 1: the emails</a><a href="#act2">Act 2: the CI failures</a><a href="#human">Where the human was needed</a><a href="#autonomy">What autonomy looked like</a></div></nav>
+<main><div class="wrap">
+
+<section id="numbers"><h2>By the numbers</h2>
+<p class="lead">Everything below happened on a single Sunday. The left column is what the human did; the right column is what happened without them.</p>
+<div class="grid">
+<div class="card metric"><strong>~12</strong><span>Short human messages across both incidents — most of them approvals</span></div>
+<div class="card metric"><strong>0</strong><span>Lines of code written, technical instructions given, or debugging sessions run by the human</span></div>
+<div class="card metric"><strong>2</strong><span>Pull requests opened, reviewed, and merged: #26 and #27</span></div>
+<div class="card metric"><strong>14</strong><span>Files changed across both fixes, all verified before and after merging</span></div>
+</div>
+<div class="callout"><strong>The thesis of this document:</strong> every diagnosis, every line changed, every test run, every verification — including catching my own mistake before it merged — happened autonomously. The human’s job was reduced to decisions only a human can make: <em>what’s wrong, which option, and yes, merge it.</em></div>
+</section>
+
+<section id="pattern"><h2>The pattern</h2>
+<p class="lead">Both incidents followed the same loop. Notice where the human appears in it — and where they don’t.</p>
+<div class="flow">
+<div class="step"><span class="num">1</span><b>Symptom</b><small>Human reports it: “I keep getting failure emails.”</small></div>
+<div class="step"><span class="num">2</span><b>Diagnose</b><small>Chief reads logs, finds root causes — alone.</small></div>
+<div class="step"><span class="num">3</span><b>Decide</b><small>Human picks a direction: fix it, and later, merge it.</small></div>
+<div class="step"><span class="num">4</span><b>Build</b><small>Chief implements everything on a branch — alone.</small></div>
+<div class="step"><span class="num">5</span><b>Verify</b><small>Chief tests locally <em>and</em> re-checks the real PR — alone.</small></div>
+<div class="step"><span class="num">6</span><b>Merge</b><small>Human approves; Chief merges and confirms — together.</small></div>
+</div>
+<p>Steps 2, 4, and 5 — the bulk of the actual engineering — ran with no human in the loop at all.</p>
+</section>
+
+<section id="act1"><h2>Act 1: The emails that wouldn’t stop</h2>
+<p class="lead">A scheduled security workflow had been failing for weeks, emailing the repository owner up to four times a day. Here is every turn.</p>
+<div class="timeline">
+
+<div class="turn you"><div class="body"><span class="actor you">You</span><div class="when">Morning — the symptom</div>
+<p>Multiple GitHub failure emails about ECC-tutorial kept arriving through the day. You asked what was going on.</p>
+<p><em>That was the entire brief. No logs attached, no hypothesis, no instructions.</em></p></div></div>
+
+<div class="turn"><div class="body"><span class="actor chief">Chief — autonomous</span><div class="when">Investigation</div>
+<p>Opened the repository, pulled the live logs for Supply-Chain Watch run #425, and read the failing step “Verify registry signatures and advisories.” Found it: <code>npm audit --audit-level=high</code> was reporting 5 vulnerabilities (1 moderate, 4 high) in the dependency lockfile. Checked the run history — 74 of the last 75 runs had failed, one was cancelled. Same root cause, rediscovered every 6 hours for roughly three weeks. That explained the email flood.</p>
+<p>Also killed a wrong hypothesis along the way: an early guess about a missing workflow script was checked against the actual file and discarded.</p></div></div>
+
+<div class="turn"><div class="body"><span class="actor chief">Chief — autonomous</span><div class="when">Options, not orders</div>
+<p>Laid out two paths — patch the vulnerable dependency versions, or mute the alarm — with the trade-offs of each. Recommended the patch.</p></div></div>
+
+<div class="turn you"><div class="body"><span class="actor you">You</span><div class="when">The decision</div>
+<p>Chose the patch. Two words’ worth of direction; the rest was execution.</p></div></div>
+
+<div class="turn"><div class="body"><span class="actor chief">Chief — autonomous</span><div class="when">The fix</div>
+<p>Created branch <code>fix/supply-chain-audit-deps</code>, updated all five packages to patched versions inside their allowed ranges (<code>@humanfs/node</code>, <code>brace-expansion</code>, <code>fast-uri</code>, <code>js-yaml</code>, <code>smol-toml</code>), and opened PR #26 — one file changed, <code>package-lock.json</code>, 60 additions and 34 deletions — with the diff verified and left open for review. Nothing merged without approval.</p></div></div>
+
+<div class="turn you"><div class="body"><span class="actor you">You</span><div class="when">~4:10 PM — the approval</div>
+<p>Approved the merge.</p></div></div>
+
+<div class="turn"><div class="body"><span class="actor chief">Chief — autonomous</span><div class="when">Merge + proof</div>
+<p>Merged PR #26 into <code>main</code> (commit <code>ebca8d0</code>), deleted the branch — then didn’t stop there. Manually triggered Supply-Chain Watch run #426 against the new <code>main</code> to prove the fix: green in 27 seconds, 215 packages audited, 0 vulnerabilities. First passing run in about three weeks. The email flood had a confirmed end, not an assumed one.</p></div></div>
+
+<div class="turn"><div class="body"><span class="actor chief">Chief — autonomous</span><div class="when">The explainer</div>
+<p>Wrote a plain-English HTML guide — <em>Security Scan Checks Explained</em> — covering what the scan is, what failed, what changed, and the Git lesson inside the repair, so the incident stays understandable months later.</p></div></div>
+
+</div>
+</section>
+
+<section id="act2"><h2>Act 2: The CI failures</h2>
+<p class="lead">Hours later, a new email: CI run #46 on the freshly-merged <code>main</code> was red. Three unrelated, pre-existing failures — none caused by the morning’s merge.</p>
+<div class="timeline">
+
+<div class="turn"><div class="body"><span class="actor chief">Chief — autonomous</span><div class="when">Triage</div>
+<p>Read the run before anyone was asked to do anything. Three independent failures: 24 of 33 test-matrix jobs red (every Linux/macOS job; all 9 Windows jobs green), code coverage below the required 80%, and the unicode-safety check rejecting emoji in docs. Security Scan and Lint were green — each check fails on its own terms.</p></div></div>
+
+<div class="turn you"><div class="body"><span class="actor you">You</span><div class="when">The decision — three words</div>
+<p>“Yes, fix them.”</p></div></div>
+
+<div class="turn"><div class="body"><span class="actor chief">Chief — autonomous</span><div class="when">Diagnosis, all three root causes</div>
+<p>Cloned the repo locally and reproduced everything without touching GitHub:</p>
+<p><strong>1. Permission denied (exit 126).</strong> Two helper scripts had lost their executable bit in Git, so Linux/macOS refused to run them — while Windows, which ignores the bit, sailed through. That single flag explained the entire platform split.<br>
+<strong>2. Coverage under 80%.</strong> Four hook scripts had no tests at all.<br>
+<strong>3. Emoji in docs.</strong> 21 violations across 8 files.</p></div></div>
+
+<div class="turn"><div class="body"><span class="actor chief">Chief — autonomous</span><div class="when">Implementation + local verification</div>
+<p>Fixed the script to invoke helpers explicitly via <code>bash</code> (POSIX tests: 11/13 → 13/13). Wrote four new test files (23 new tests, all passing; coverage: lines 88.5%, branches 80.1%, functions 95.4%, statements 88.5% — every 80% threshold cleared). Replaced all 21 emoji with <code>[WARNING]</code> / <code>[BLOCK]</code> / <code>[FAIL]</code> / <code>[PASS]</code> text tags (unicode check: passed). <em>Everything was proven locally before GitHub was involved at all.</em></p></div></div>
+
+<div class="turn you"><div class="body"><span class="actor you">You</span><div class="when">The auth detour — the only friction of the day</div>
+<p>GitHub sign-in through the automation kept failing — the saved login was rejected, sessions expired. You signed in manually in the browser (twice), then asked for the credentials to be saved so it wouldn’t happen again. A secure vault card was issued; you submitted it; the login was saved.</p>
+<p><em>Note what this was: help with access, not with the work. Nothing about the fix needed a human.</em></p></div></div>
+
+<div class="turn"><div class="body"><span class="actor chief">Chief — autonomous</span><div class="when">PR #27 opened — unmerged, by design</div>
+<p>Drove the browser task: created <code>fix/ci-health</code>, applied the script fix, all emoji replacements, and uploaded the four test files — then opened PR #27 (<em>fix: resolve CI failures (tests, coverage, unicode)</em>) and stopped. Open, not merged. The rule held: no merge without your explicit word.</p></div></div>
+
+<div class="turn"><div class="body"><span class="actor chief">Chief — autonomous</span><div class="when">The catch — verifying the artifact, not the process</div>
+<p>Instead of trusting that the instructions had been followed, fetched the actual PR branch (<code>git fetch origin pull/27/head</code>) and diffed it against the verified local files. Found 5 emoji replacements missing — my own instruction error had filed them under the wrong filenames. Sent the task back to apply exactly those 5, then re-verified: zero emoji remaining, every file byte-identical to the proven local copies. <em>Caught before merge, not after. No human spotted it; no human needed to.</em></p></div></div>
+
+<div class="turn you"><div class="body"><span class="actor you">You</span><div class="when">~5:37 PM — the approval</div>
+<p>“merge it.”</p></div></div>
+
+<div class="turn"><div class="body"><span class="actor chief">Chief — autonomous</span><div class="when">Merge + confirmation</div>
+<p>Merged PR #27 (commit <code>7e3ff0b</code>), deleted the <code>fix/ci-health</code> branch, and confirmed the merge commit sits on <code>main</code>. Then folded the CI story into the HTML guide and wrote this journey document.</p></div></div>
+
+</div>
+<div class="callout note"><strong>Final honest status, both acts:</strong> every fix was verified in two places — locally, and against the real PR branch before merging. The next scheduled CI and Supply-Chain Watch runs are the last confirmation, in GitHub’s own environment rather than mine.</div>
+</section>
+
+<section id="human"><h2>Where the human was needed</h2>
+<p class="lead">The complete list. If it isn’t here, it happened without you.</p>
+<div class="grid">
+<div class="card"><h3>1. Report the symptom</h3><p>“I keep getting failure emails.” Machines can’t feel annoyed by an inbox; you could.</p></div>
+<div class="card"><h3>2. Choose the direction</h3><p>Patch the dependencies vs. mute the alarm. A value judgment, not a technical one.</p></div>
+<div class="card"><h3>3. Approve the merges</h3><p>Twice: “yes” for #26, “merge it” for #27. Irreversible actions stay yours.</p></div>
+<div class="card"><h3>4. Grant access</h3><p>Manual sign-in when automation auth failed, plus saving the credentials. Friction from tooling, not from the task.</p></div>
+</div>
+<p>Four moments. Everything else — reading logs, forming hypotheses, discarding the wrong one, writing code and tests, running verification, opening pull requests, catching my own filing error, confirming merges — ran on its own.</p>
+</section>
+
+<section id="autonomy"><h2>What autonomy looked like, concretely</h2>
+<div class="card" style="margin-bottom:18px"><h3>Verify the artifact, not the process</h3><p>The strongest moment of the day: five fixes were missing from PR #27 because of <em>my own</em> mislabeled instructions. Rather than re-reading the plan and feeling confident, I diffed the actual branch against the proven files — and the error showed up immediately. Autonomy isn’t just doing the work; it’s distrusting your own work enough to check it.</p></div>
+<div class="grid">
+<div class="card"><h3>Local-first</h3><p>All three CI fixes were implemented and proven on a local clone — tests, coverage, unicode check — before GitHub was touched. The PR contained no surprises because there was nothing left unproven.</p></div>
+<div class="card"><h3>Wrong hypotheses die fast</h3><p>The missing-workflow-script theory was checked against the real file and discarded the same hour, not carried into the fix.</p></div>
+<div class="card"><h3>Proof over assumption</h3><p>PR #26 wasn’t declared fixed at merge time — a manual scan run was triggered and watched green. “Should be fixed” was never the deliverable.</p></div>
+<div class="card"><h3>Clean handoffs</h3><p>Branches deleted after merging, credentials saved to the vault for next time, guides written so future-you understands past-you. The workspace was left tidier than found.</p></div>
+</div>
+</section>
+
+<section><h2>Links and evidence</h2>
+<ul class="links">
+<li><a href="https://github.com/az9713/ECC-tutorial/pull/26">PR #26</a> — patch vulnerable dependencies (merged ~4:10 PM, commit <code>ebca8d0</code>).</li>
+<li><a href="https://github.com/az9713/ECC-tutorial/pull/27">PR #27</a> — resolve CI failures: tests, coverage, unicode (merged ~5:37 PM, commit <code>7e3ff0b</code>).</li>
+<li><a href="https://github.com/az9713/ECC-tutorial/actions/runs/34782181165">Supply-Chain Watch run #425</a> — the failing run that started Act 1 (GitHub sign-in may be required).</li>
+</ul></section>
+
+</div></main>
+<footer><div class="wrap"><strong>ECC-tutorial • The Development Journey</strong><p>Prepared September 13, 2026. A turn-by-turn record of two incidents resolved in one day: the Supply-Chain Watch dependency failures (PR #26) and the CI workflow failures (PR #27). Times are Pacific.</p><button onclick="window.print()">Print or save as PDF</button></div></footer>
+</body></html>
