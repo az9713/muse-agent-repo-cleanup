@@ -38,7 +38,7 @@ footer{background:#dfe8e8;padding:35px 0;color:#33444d}footer p{max-width:780px;
 <div class="status"><span class="dot"></span> 2 PRs merged • 14 files changed • human input: a handful of short messages</div>
 <p style="margin-top:14px;font-size:.95rem;color:#9fc3c7">Built end-to-end by <strong style="color:#fff">Muse</strong>, Meta's personal AI agent — <a href="https://muse.ai" style="color:#92d4d7">muse.ai</a></p>
 </div></header>
-<nav><div class="wrap"><a href="#numbers">By the numbers</a><a href="#pattern">The pattern</a><a href="#act1">Act 1: the emails</a><a href="#act2">Act 2: the CI failures</a><a href="#human">Where the human was needed</a><a href="#autonomy">What autonomy looked like</a></div></nav>
+<nav><div class="wrap"><a href="#numbers">By the numbers</a><a href="#pattern">The pattern</a><a href="#act1">Act 1: the emails</a><a href="#act2">Act 2: the CI failures</a><a href="#human">Where the human was needed</a><a href="#autonomy">What autonomy looked like</a><a href="#computer-use">Under the hood: computer use</a></div></nav>
 <main><div class="wrap">
 
 <section id="numbers"><h2>By the numbers</h2>
@@ -158,6 +158,28 @@ footer{background:#dfe8e8;padding:35px 0;color:#33444d}footer p{max-width:780px;
 </div>
 </section>
 
+<section id="computer-use"><h2>Under the hood: computer use</h2>
+<p class="lead">None of the above was described in words and handed to a human to execute. It was done with a real computer: a terminal, a filesystem, and a live browser. Here’s the machinery behind the timeline.</p>
+<div class="grid" style="grid-template-columns:1fr 1fr">
+<div class="card"><h3>Terminal</h3>
+<ul>
+<li>Cloned the repository locally and reproduced all three CI failures <em>before GitHub was touched</em>.</li>
+<li>Ran the POSIX test suite: 11/13 passing → 13/13 after the fix.</li>
+<li>Measured coverage with <code>c8</code>: lines 88.5%, branches 80.1%, functions 95.4%, statements 88.5%.</li>
+<li>Ran the unicode-safety checker until it passed.</li>
+<li>Fetched the actual PR branch (<code>git fetch origin pull/27/head</code>) and diffed it against the verified local files — the move that caught the 5 missing fixes.</li>
+<li>Confirmed the merge commit on <code>main</code> after each merge.</li>
+</ul></div>
+<div class="card"><h3>Live browser</h3>
+<ul>
+<li>Created branches, edited files, and uploaded the four new test files through the GitHub web UI.</li>
+<li>Opened PRs #26 and #27, then merged each one after explicit human approval and deleted the branches.</li>
+<li>Created this showcase repository, uploaded its files, and enabled GitHub Pages — all in-browser.</li>
+<li>Absorbed the flaky authentication without losing work: retried the saved login, adapted to manual takeover, saved fresh credentials to the vault, and resumed mid-task every time the session dropped.</li>
+</ul></div>
+</div>
+<div class="callout"><strong>The speed, stated plainly:</strong> from the first failure email to two diagnosed, fixed, verified, and merged pull requests — plus plain-English guides and a live showcase site — in one Sunday afternoon. No tickets filed, no handoffs, no waiting on anyone.</div>
+</section>
 <section><h2>Links and evidence</h2>
 <ul class="links">
 <li><a href="https://github.com/az9713/ECC-tutorial/pull/26">PR #26</a> — patch vulnerable dependencies (merged ~4:10 PM, commit <code>ebca8d0</code>).</li>
