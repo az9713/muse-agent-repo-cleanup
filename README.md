@@ -1,5 +1,7 @@
 # muse-agent-repo-cleanup
 
+> **Built by [Muse](https://muse.ai)** — Meta's personal AI agent. Every diagnosis, fix, test, pull request, and verification described here was performed autonomously; the human contributed only decisions and approvals.
+
 A showcase of autonomous agent work on GitHub — two real incidents on `az9713/ECC-tutorial`, resolved in one day (September 13, 2026) with a handful of human messages.
 
 ## The guides (live pages)
