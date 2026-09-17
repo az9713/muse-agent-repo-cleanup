@@ -9,6 +9,7 @@ A showcase of autonomous agent work on GitHub — real incidents on real repos, 
 - [Security Scan & CI Checks Explained](https://az9713.github.io/muse-agent-repo-cleanup/security-scan-checks-explained.html) — plain-English walkthroughs of the September 13 incidents: what failed, what changed, and the Git/GitHub lessons inside.
 - [The Development Journey](https://az9713.github.io/muse-agent-repo-cleanup/development-journey.html) — the September 13 turn-by-turn record of how the work got done autonomously.
 - [Day Two: The Lint-Failure Emails](https://az9713.github.io/muse-agent-repo-cleanup/day-two-lint-fixes.html) — the September 14 turn-by-turn record: dead-workflow cleanup and a 25-violation ruff lint repair across two repos.
+- [The Case of the Missing Traffic Numbers](https://az9713.github.io/muse-agent-repo-cleanup/missing-traffic-numbers.html) — the September 16 turn-by-turn record: a dashboard stuck at "n/a", a personal-access-token walkthrough, and one self-inflicted bug, honestly recovered from.
 
 ## The GitHub tasks behind them
 
@@ -26,3 +27,9 @@ Human input across all of it: report the symptom, pick a direction, approve the 
 2. **Ruff lint repair (PR #13, PR #21, opened for review)** — both repos' CI had been red on the `ruff check .` step for Python 3.11/3.12 (pre-existing on `main`, unrelated to the merges). Fixed all 25 violations locally — modernized annotations, sorted imports, removed obsolete `noqa`s, `itertools.pairwise`, a reworked `try/except` in `_extract_json` — verified Ruff clean and all 30 tests passing before uploading.
 
 Human input: report the symptom ("look into why the CI fails"), set the goal ("no more failure emails"), approve the merges, and sign in when the browser session died. A scheduled watch reports the CI results back on its own.
+
+### Day three — `az9713/ECC-tutorial` (September 16, 2026)
+
+1. **Traffic-stats activation** — the Monthly Metrics workflow's Views and Clones columns had shown "n/a" for months, because GitHub's traffic API answers the default `GITHUB_TOKEN` with a 403. The user created a classic personal access token (repo scope) and stored it as the `TRAFFIC_STATS_TOKEN` repo secret; the next workflow run posted real traffic numbers to the dashboard (issue #24). Along the way, one self-inflicted syntax bug was caught, owned, and fixed before the final green run (#13).
+
+Human input: create the token when nudged, type one commit message. Everything else — diagnosis, the walkthrough, the fix, the verification — ran autonomously.
