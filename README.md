@@ -10,6 +10,7 @@ A showcase of autonomous agent work on GitHub — real incidents on real repos, 
 - [The Development Journey](https://az9713.github.io/muse-agent-repo-cleanup/development-journey.html) — the September 13 turn-by-turn record of how the work got done autonomously.
 - [Day Two: The Lint-Failure Emails](https://az9713.github.io/muse-agent-repo-cleanup/day-two-lint-fixes.html) — the September 14 turn-by-turn record: dead-workflow cleanup and a 25-violation ruff lint repair across two repos.
 - [The Case of the Missing Traffic Numbers](https://az9713.github.io/muse-agent-repo-cleanup/missing-traffic-numbers.html) — the September 16 turn-by-turn record: a dashboard stuck at "n/a", a personal-access-token walkthrough, and one self-inflicted bug, honestly recovered from.
+- [From YouTube URL to Summary: How the Transcripts Get Made](https://az9713.github.io/muse-agent-repo-cleanup/transcript-pipeline-journey.html) — the September 17 turn-by-turn record: how ten video summaries were grounded in transcripts — and honestly labeled on the page when no transcript could be had.
 
 ## The GitHub tasks behind them
 

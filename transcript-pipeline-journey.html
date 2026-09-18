@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="description" content="A technical field report on the pipeline that turns YouTube URLs into grounded video summaries: transcript capture, the bot-wall, the podcast-audio fallback, and the honesty convention." />
+  <link rel="icon" href="data:," />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Literata:opsz,wght@7..72,400;7..72,600;7..72,700&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <title>From YouTube URL to Summary: How the Transcripts Get Made</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --paper: #f5f2ea;
+      --paper-deep: #ece6d9;
+      --ink: #172222;
+      --muted: #52605e;
+      --line: #c8c1b2;
+      --accent: #c8512c;
+      --accent-ink: #8d2e16;
+      --teal: #0e625f;
+      --teal-soft: #dce9e4;
+      --code: #132b2a;
+      --code-ink: #e8f0eb;
+      --mark: #f2c65f;
+      --shadow: rgba(23,34,34,.12);
+      --serif: "Literata", Georgia, serif;
+      --sans: "Public Sans", Helvetica, sans-serif;
+      --mono: "IBM Plex Mono", monospace;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper: #111817;
+        --paper-deep: #192321;
+        --ink: #eef1ea;
+        --muted: #b5c0bc;
+        --line: #3a4945;
+        --accent: #f0784e;
+        --accent-ink: #ff9a77;
+        --teal: #74c9bd;
+        --teal-soft: #1a302d;
+        --code: #07100f;
+        --code-ink: #e8f0eb;
+        --mark: #d2a83d;
+        --shadow: rgba(0,0,0,.34);
+      }
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: auto; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--sans);
+      line-height: 1.65;
+      text-rendering: optimizeLegibility;
+    }
+    a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: .2em; }
+    a:hover { color: var(--accent); }
+    .mast {
+      min-height: 88svh;
+      display: grid;
+      grid-template-columns: minmax(0, 1.45fr) minmax(17rem, .55fr);
+      border-bottom: 1px solid var(--line);
+    }
+    .mast-main {
+      padding: clamp(2rem, 6vw, 6rem) clamp(1.25rem, 7vw, 7rem);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .case-label {
+      font-family: var(--mono);
+      font-size: .76rem;
+      color: var(--accent-ink);
+      letter-spacing: .06em;
+    }
+    h1 {
+      margin: clamp(3rem, 10vh, 8rem) 0 2rem;
+      max-width: 14ch;
+      font-family: var(--serif);
+      font-size: clamp(3.25rem, 8.5vw, 8.5rem);
+      line-height: .94;
+      letter-spacing: -.055em;
+      font-weight: 600;
+    }
+    .dek {
+      max-width: 48rem;
+      margin: 0;
+      font-family: var(--serif);
+      font-size: clamp(1.15rem, 2vw, 1.55rem);
+      line-height: 1.55;
+      color: var(--muted);
+    }
+    .mast-side {
+      padding: clamp(2rem, 5vw, 4rem) clamp(1.25rem, 4vw, 3rem);
+      background: var(--teal-soft);
+      border-left: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      gap: 2rem;
+    }
+    .stamp {
+      width: 8rem;
+      aspect-ratio: 1;
+      border: 2px solid var(--accent);
+      color: var(--accent-ink);
+      border-radius: 50%;
+      display: grid;
+      place-content: center;
+      text-align: center;
+      font-family: var(--mono);
+      font-size: .72rem;
+      font-weight: 500;
+      line-height: 1.4;
+      transform: rotate(-7deg);
+    }
+    .mast-side dl { margin: 0; }
+    .mast-side div { padding: .9rem 0; border-top: 1px solid var(--line); }
+    .mast-side dt { font: 500 .68rem/1.2 var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+    .mast-side dd { margin: .25rem 0 0; font-weight: 600; }
+    .jump {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: color-mix(in srgb, var(--paper) 94%, transparent);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(12px);
+    }
+    .jump-inner {
+      max-width: 75rem;
+      margin: auto;
+      display: flex;
+      align-items: center;
+      gap: .4rem 1.4rem;
+      flex-wrap: wrap;
+      padding: .85rem 1.25rem;
+      font-size: .82rem;
+    }
+    .jump strong { font-family: var(--mono); color: var(--accent-ink); margin-right: auto; }
+    .jump a { text-decoration: none; font-weight: 600; }
+    main { overflow: clip; }
+    .story {
+      max-width: 75rem;
+      margin: auto;
+      padding: clamp(4rem, 10vw, 8rem) 1.25rem;
+    }
+    .chapter {
+      display: grid;
+      grid-template-columns: minmax(9rem, .35fr) minmax(0, 1fr);
+      gap: clamp(2rem, 7vw, 7rem);
+      padding: clamp(3.5rem, 8vw, 7rem) 0;
+      border-top: 1px solid var(--line);
+    }
+    .chapter:first-child { border-top: 0; padding-top: 0; }
+    .chapter-mark {
+      font: 500 .75rem/1.4 var(--mono);
+      color: var(--accent-ink);
+    }
+    .chapter-mark .num {
+      display: block;
+      font: 600 clamp(2.8rem, 6vw, 5rem)/1 var(--serif);
+      color: var(--line);
+      margin-bottom: .8rem;
+    }
+    .copy { min-width: 0; }
+    h2 {
+      margin: -.2rem 0 1.5rem;
+      font: 600 clamp(2rem, 4.5vw, 4rem)/1.08 var(--serif);
+      letter-spacing: -.035em;
+      max-width: 16ch;
+    }
+    .copy p {
+      max-width: 44rem;
+      margin: 0 0 1.35rem;
+      font-family: var(--serif);
+      font-size: clamp(1.06rem, 1.6vw, 1.23rem);
+    }
+    .copy p:first-of-type::first-letter {
+      float: left;
+      font: 600 4.2rem/.78 var(--serif);
+      color: var(--accent);
+      margin: .16em .12em 0 0;
+    }
+    code {
+      font-family: var(--mono);
+      font-size: .82em;
+      background: var(--paper-deep);
+      padding: .12em .33em;
+      overflow-wrap: anywhere;
+    }
+    .evidence {
+      margin: 2.2rem 0;
+      padding: 1.4rem 0 1.4rem 1.5rem;
+      border-left: 3px solid var(--accent);
+      max-width: 44rem;
+      font: 500 1rem/1.65 var(--mono);
+      color: var(--muted);
+    }
+    .evidence strong { color: var(--ink); }
+    .terminal {
+      max-width: 44rem;
+      margin: 2.2rem 0;
+      background: var(--code);
+      color: var(--code-ink);
+      box-shadow: .45rem .45rem 0 var(--shadow);
+      padding: 1.35rem;
+      font: 400 .84rem/1.75 var(--mono);
+      overflow-wrap: anywhere;
+    }
+    .terminal .prompt { color: #83d5bf; }
+    .terminal .bad { color: #ff9a77; }
+    .terminal .good { color: #f2c65f; }
+    .proof {
+      background: var(--teal);
+      color: #f7fbf8;
+      padding: clamp(4rem, 10vw, 8rem) 1.25rem;
+    }
+    .proof-inner { max-width: 75rem; margin: auto; }
+    .proof h2 { max-width: 20ch; color: inherit; }
+    .proof-intro { max-width: 47rem; font: 400 1.15rem/1.65 var(--serif); color: #e4f1ec; }
+    .numbers {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      max-width: 46rem;
+      margin-top: 3.5rem;
+      border-top: 1px solid rgba(255,255,255,.4);
+      border-bottom: 1px solid rgba(255,255,255,.4);
+    }
+    .metric { padding: 2rem 1rem 2.1rem 0; }
+    .metric + .metric { border-left: 1px solid rgba(255,255,255,.4); padding-left: 2rem; }
+    .metric b { display: block; font: 600 clamp(3.5rem, 8vw, 7rem)/1 var(--serif); letter-spacing: -.05em; }
+    .metric span { font: 500 .8rem/1.3 var(--mono); color: #d4e7e1; }
+    .proof-note { max-width: 46rem; margin-top: 1.4rem; color: #d4e7e1; }
+    .timeline-wrap {
+      max-width: 75rem;
+      margin: auto;
+      padding: clamp(5rem, 10vw, 9rem) 1.25rem;
+    }
+    .timeline-head { max-width: 44rem; margin-bottom: 4rem; }
+    .timeline-head p { color: var(--muted); }
+    .timeline { list-style: none; margin: 0; padding: 0; }
+    .timeline li {
+      display: grid;
+      grid-template-columns: 8rem 1.7rem minmax(0, 1fr);
+      gap: 1rem;
+      min-height: 8rem;
+    }
+    .timeline .time { font: 500 .74rem/1.4 var(--mono); color: var(--accent-ink); padding-top: .05rem; }
+    .rail { position: relative; }
+    .rail::before { content: ""; position: absolute; top: .4rem; bottom: -.5rem; left: .45rem; width: 1px; background: var(--line); }
+    .timeline li:last-child .rail::before { display: none; }
+    .dot { position: absolute; top: .2rem; left: 0; width: .95rem; height: .95rem; border: 2px solid var(--accent); border-radius: 50%; background: var(--paper); }
+    .timeline h3 { margin: 0 0 .4rem; font: 600 1.15rem/1.35 var(--sans); }
+    .timeline p { margin: 0; max-width: 44rem; color: var(--muted); }
+    .lessons {
+      background: var(--paper-deep);
+      border-top: 1px solid var(--line);
+      padding: clamp(5rem, 10vw, 9rem) 1.25rem;
+    }
+    .lessons-inner { max-width: 75rem; margin: auto; display: grid; grid-template-columns: .55fr 1fr; gap: clamp(2.5rem, 7vw, 7rem); }
+    .lessons h2 { position: sticky; top: 5rem; }
+    .notes { list-style: none; margin: 0; padding: 0; counter-reset: lesson; }
+    .notes li {
+      counter-increment: lesson;
+      padding: 0 0 2.25rem 3.25rem;
+      margin-bottom: 2.25rem;
+      border-bottom: 1px solid var(--line);
+      position: relative;
+      font: 400 clamp(1.05rem, 1.7vw, 1.25rem)/1.65 var(--serif);
+    }
+    .notes li::before { content: counter(lesson, decimal-leading-zero); position: absolute; left: 0; top: .2rem; font: 500 .75rem/1 var(--mono); color: var(--accent-ink); }
+    footer {
+      max-width: 75rem;
+      margin: auto;
+      padding: 2.5rem 1.25rem calc(2.5rem + env(safe-area-inset-bottom));
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+      font-size: .78rem;
+      color: var(--muted);
+    }
+    footer .credit { font: 600 .9rem/1.3 var(--mono); color: var(--ink); }
+    @media (max-width: 760px) {
+      .mast { grid-template-columns: 1fr; min-height: 0; }
+      .mast-main { min-height: 73svh; }
+      .mast-side { border-left: 0; border-top: 1px solid var(--line); flex-direction: row; align-items: flex-end; }
+      .stamp { width: 6rem; flex: 0 0 auto; }
+      .mast-side dl { flex: 1; }
+      .jump-inner { flex-wrap: nowrap; overflow: hidden; }
+      .jump a { display: none; }
+      .chapter { grid-template-columns: 1fr; gap: 1.25rem; }
+      .chapter-mark .num { display: inline; font-size: 2rem; margin-right: .6rem; }
+      .numbers { grid-template-columns: 1fr 1fr; }
+      .timeline li { grid-template-columns: 5.5rem 1.2rem minmax(0, 1fr); gap: .6rem; min-height: 10rem; }
+      .lessons-inner { grid-template-columns: 1fr; }
+      .lessons h2 { position: static; }
+    }
+    @media (max-width: 430px) {
+      h1 { font-size: 3.35rem; }
+      .mast-side { align-items: flex-start; }
+      .stamp { display: none; }
+      .metric { padding-right: .7rem; }
+      .metric + .metric { padding-left: .8rem; }
+      .timeline li { grid-template-columns: 1.2rem minmax(0, 1fr); gap: .65rem; }
+      .timeline .time { grid-column: 2; margin-bottom: .25rem; }
+      .rail { grid-column: 1; grid-row: 1 / span 2; }
+      .timeline .event { grid-column: 2; }
+    }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+    @media print {
+      .jump { display: none; }
+      .mast { min-height: auto; }
+      body { background: #fff; color: #111; }
+    }
+  </style>
+</head>
+<body>
+  <header class="mast">
+    <div class="mast-main">
+      <div class="case-label">FIELD REPORT · VIDEO SUMMARIES · SEPTEMBER 2026</div>
+      <div>
+        <h1>From YouTube URL to Summary: How the Transcripts Get Made</h1>
+        <p class="dek">Ten bare links went in and came out as tabbed, flowing-prose video summaries. This is the pipeline behind them: how the transcripts were captured when capture was possible, what was done when it wasn&rsquo;t, and why every section of the page says which is which.</p>
+      </div>
+    </div>
+    <aside class="mast-side" aria-label="Case summary">
+      <div class="stamp">PIPELINE<br />LIVE</div>
+      <dl>
+        <div><dt>Repository</dt><dd>today_09172026</dd></div>
+        <div><dt>Page</dt><dd>Ten videos, distilled.</dd></div>
+        <div><dt>Transcript-grounded</dt><dd>8 of 10</dd></div>
+        <div><dt>Disclosed fallbacks</dt><dd>2</dd></div>
+      </dl>
+    </aside>
+  </header>
+
+  <nav class="jump" aria-label="On this page">
+    <div class="jump-inner">
+      <strong>CASE FILE</strong>
+      <a href="#setup">Setup</a>
+      <a href="#capture">Capture</a>
+      <a href="#block">Block</a>
+      <a href="#fallback">Fallback</a>
+      <a href="#honesty">Honesty</a>
+      <a href="#proof">Proof</a>
+      <a href="#lessons">Lessons</a>
+    </div>
+  </nav>
+
+  <main>
+    <div class="story">
+      <section class="chapter" id="setup">
+        <div class="chapter-mark"><span class="num">01</span>The setup</div>
+        <div class="copy">
+          <h2>Ten tabs, one pipeline</h2>
+          <p>On September 17, 2026, ten YouTube links arrived across the day in a chat window. Each one traveled the same path: <strong>identify the video</strong>, <strong>get the transcript</strong>, <strong>write the summary</strong> in the page&rsquo;s section template, <strong>add a tab button and panel</strong> to <code>index.html</code>, <strong>bump the header</strong> (&ldquo;Eight videos, distilled.&rdquo; became &ldquo;Nine&rdquo;, then &ldquo;Ten&rdquo;) and the tabs CSS grid (<code>repeat(8, &hellip;)</code> &rarr; <code>repeat(9, &hellip;)</code> &rarr; <code>repeat(10, &hellip;)</code>), <strong>push to main</strong> on <code>az9713/today_09172026</code>, and <strong>verify the live page</strong> at <code>az9713.github.io/today_09172026/</code> renders every tab.</p>
+          <p>The pipeline&rsquo;s second stage is the one that can fail, and the one this report is about. Everything downstream &mdash; the prose, the tab, the push &mdash; is mechanical. The transcript is the hard part: either YouTube hands over the words, or you have to go get them somewhere else, or you have to say honestly that you couldn&rsquo;t.</p>
+          <div class="terminal" aria-label="Pipeline flow">
+            <span class="prompt">$</span> youtube-url &rarr; identify &rarr; transcript &rarr; prose &rarr; tab &rarr; push &rarr; verify<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="good">&#10003;</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="bad">&#10007; may fail</span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="good">&#10003;</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="good">&#10003;</span>&nbsp;&nbsp;&nbsp;<span class="good">&#10003;</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="good">&#10003;</span>
+          </div>
+          <div class="evidence"><strong>The invariant:</strong> no section ships without a <code>source-note</code> stating what the summary was grounded in. That rule is load-bearing &mdash; it is what makes the other five stages trustworthy.</div>
+        </div>
+      </section>
+
+      <section class="chapter" id="capture">
+        <div class="chapter-mark"><span class="num">02</span>The capture</div>
+        <div class="copy">
+          <h2>Ask YouTube for the words first</h2>
+          <p>Route one is the obvious one: ask YouTube for the captions. <code>yt-dlp</code> can pull both creator-uploaded subtitles and the auto-generated captions YouTube produces for most videos. When it works, it works completely &mdash; one 62-minute episode yielded 1,734 caption lines, the entire conversation, ready to read.</p>
+          <p>The sandbox had one quirk of its own before YouTube even got a say. The first attempts died on an SSL failure: traffic was passing through a sandbox proxy whose certificate the client did not trust. The fix was a flag, <code>--no-check-certificate</code> &mdash; a compromise acceptable here because the threat model is a developer sandbox, not a payment terminal, but worth naming plainly rather than hiding in a command line.</p>
+          <div class="terminal" aria-label="Caption capture command">
+            <span class="prompt">$</span> yt-dlp --no-check-certificate \<br />
+            &nbsp;&nbsp;--write-subs --write-auto-subs --sub-langs en \<br />
+            &nbsp;&nbsp;"https://www.youtube.com/watch?v=38vwjWpHFes"<br /><br />
+            <span class="good">&#10003;</span> doomed.en.srt &mdash; 120KB, 1,734 lines, full 62 minutes
+          </div>
+          <p>When this route succeeds, the rest of the pipeline is honest and straightforward: a summary written from the actual transcript, with a source-note that names the transcript as the source. The trouble is that it only sometimes succeeds.</p>
+        </div>
+      </section>
+      <section class="chapter" id="block">
+        <div class="chapter-mark"><span class="num">03</span>The block</div>
+        <div class="copy">
+          <h2>The bot-wall is not personal</h2>
+          <p>YouTube&rsquo;s anti-bot detection watches for data-center IP addresses, and the sandbox is one. The first symptom is <code>HTTP Error 429: Too Many Requests</code>. If requests keep coming, the wall escalates to a hard stop:</p>
+          <div class="terminal" aria-label="Bot-wall failure">
+            <span class="prompt">$</span> yt-dlp --write-auto-subs --sub-langs en "https://www.youtube.com/watch?v=lrsW8k-dHSk"<br />
+            WARNING: [youtube] lrsW8k-dHSk: <span class="bad">Unable to download webpage: HTTP Error 429: Too Many Requests</span><br />
+            ERROR: [youtube] lrsW8k-dHSk: <span class="bad">Sign in to confirm you&rsquo;re not a bot. Use --cookies-from-browser or --cookies for the authentication.</span>
+          </div>
+          <p>The blocking is <strong>inconsistent by design</strong>. One video&rsquo;s captions download cleanly; the next is refused; a third fails only after several attempts. The practical consequence is that aggressive retry loops make the block <em>worse</em> &mdash; every failed attempt deepens the hole, so hammering a dead endpoint is the one strategy guaranteed not to work.</p>
+          <p>When the front door closed, the researchers tried the side doors, one by one: the Invidious captions API (HTTP 200, empty body), the Piped API (502 or dead), the <code>video.google.com/timedtext</code> endpoint (empty), public aggregator sites (client-side or empty), the Invidious audio proxy (Cloudflare&rsquo;s own bot-wall), and a direct <code>googlevideo</code> audio URL (IP-blocked; one download stalled at ~1.8&nbsp;MB and was killed). Every route led back to the same gate. That exhaustive failure was useful information: it meant the fallback had to live outside YouTube entirely.</p>
+          <div class="evidence"><strong>The lesson of the block:</strong> budget your attempts. Two careful tries tell you as much as twenty &mdash; and the twentieth is the one that gets the IP blacklisted for the rest of the day.</div>
+        </div>
+      </section>
+
+      <section class="chapter" id="fallback">
+        <div class="chapter-mark"><span class="num">04</span>The fallback</div>
+        <div class="copy">
+          <h2>If the show has a podcast, YouTube doesn&rsquo;t matter</h2>
+          <p>The fallback that actually worked bypasses YouTube completely. Many video shows are also podcasts: their RSS feeds carry the identical episode as a plain MP3 over HTTP, no bot-wall, no sign-in, no JavaScript runtime. The procedure is simple &mdash; fetch the show&rsquo;s RSS, find the matching episode, download the audio, and transcribe it locally with <code>faster-whisper</code>.</p>
+          <p>Two of the day&rsquo;s ten tabs were built this way. The Dina Powell McCormick All-In episode, whose YouTube captions were blocked, was transcribed from the identical episode audio in the official All-In Podcast feed. The a16z real-time-AI-video conversation &mdash; released on YouTube as &ldquo;How Real-Time AI Video Is Changing How Creators Work&rdquo; &mdash; was transcribed from The a16z Show feed, where the same conversation appeared as &ldquo;The Next Frontier of AI Video Is Control&rdquo;. Both sections say so in their source-notes, naming the podcast feed as the transcript&rsquo;s origin.</p>
+          <p>The fallback had one genuine environment gotcha. The transcription model download crashed inside <code>httpx</code> 0.28.1 while parsing the sandbox&rsquo;s <code>no_proxy</code> variable, because it contained the IPv6 literal <code>[::1]</code>. The fix: unset <code>no_proxy</code> and <code>NO_PROXY</code> before the download step. It is the kind of bug that looks like a network failure and is actually a string-parsing failure &mdash; worth one line in the runbook.</p>
+          <div class="terminal" aria-label="Transcription fallback">
+            <span class="prompt">$</span> unset no_proxy NO_PROXY<br />
+            <span class="prompt">$</span> curl -s <span class="good">"$SHOW_RSS"</span> | grep -i episode-title  <span class="prompt">#</span> match the episode<br />
+            <span class="prompt">$</span> curl -o episode.mp3 <span class="good">"$MP3_URL"</span>                        <span class="prompt">#</span> plain HTTP, no bot-wall<br />
+            <span class="prompt">$</span> faster-whisper episode.mp3 --language en    <span class="prompt">#</span> transcribe locally
+          </div>
+          <p>One more safeguard became part of the procedure mid-day, after a researcher nearly summarized the <em>wrong</em> episode &mdash; reading a SemiAnalysis transcript for a URL that belonged to a different creator. The cheapest identity check in the pipeline is YouTube&rsquo;s oEmbed endpoint, which returns a video&rsquo;s title and author with no authentication at all:</p>
+          <div class="terminal" aria-label="Identity check via oEmbed">
+            <span class="prompt">$</span> curl -s "https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=lrsW8k-dHSk&amp;format=json" \<br />
+            &nbsp;&nbsp;| python3 -c "import json,sys; d=json.load(sys.stdin); print(d['title'],'|',d['author_name'])"<br /><br />
+            <span class="good">Anthropic Just Dropped Claude 2.0 (Full Breakdown) | Brock Mesarich | AI for Non Techies</span>
+          </div>
+          <p>That one-line check caught the mismatch before a word of the wrong summary was written. Identity before content is now the rule: the URL gets named before anything is read.</p>
+        </div>
+      </section>
+      <section class="chapter" id="honesty">
+        <div class="chapter-mark"><span class="num">05</span>The honesty</div>
+        <div class="copy">
+          <h2>Two tabs have no transcript, and the page says so</h2>
+          <p>Sometimes nothing works. No captions, no podcast feed, no side door &mdash; as with Brock Mesarich&rsquo;s Claude video (a solo YouTube creator, no feed) and the Marc Benioff Dreamforce interview (absent from the All-In podcast feed as a standalone episode). The honest fallback is a summary grounded in the video&rsquo;s published description, its chapter list, and same-day press coverage from outlets like Reuters, TechCrunch, and VentureBeat &mdash; with <strong>no invented quotes</strong> and a source-note that says exactly that.</p>
+          <p>The Benioff section shows how specific the disclosure gets: its note states that YouTube captions were inaccessible and the interview was not in the podcast feed, and adds that the quoted Benioff remarks are &ldquo;from this week&rsquo;s press, not from inside the interview.&rdquo; A reader can calibrate every sentence against that one line.</p>
+          <p>The mirror image of this case is the SemiAnalysis &ldquo;Are We Doomed?&rdquo; episode. It first shipped as a description-based summary, its note admitting that transcript retrieval was blocked. Later that day the captions became retrievable, and the whole section was rewritten from the real transcript &mdash; the prose changed in substance, not just polish, and the source-note was updated to match. Disclosure is not a one-time stamp; it tracks the evidence as the evidence improves.</p>
+          <div class="evidence"><strong>The source-note is a design decision, not decoration.</strong> It lets the reader &mdash; and the human commissioning the page &mdash; assign the right weight to each section. An honest &ldquo;no transcript&rdquo; beats a confident guess every time.</div>
+        </div>
+      </section>
+    </div>
+
+    <section class="proof" id="proof">
+      <div class="proof-inner">
+        <h2>The page is the proof</h2>
+        <p class="proof-intro">Ten summaries went live on <code>az9713.github.io/today_09172026/</code> in one day. Eight rest on full transcripts &mdash; two of them via the podcast-audio fallback when YouTube blocked captions. Two rest on descriptions and press coverage, and their sections say so. The human-in-the-loop shape holds throughout: flowing prose, not bullets; the channel and episode title named before the narration; two to four open questions instead of conclusions; no personal information anywhere.</p>
+        <div class="numbers" aria-label="Pipeline results">
+          <div class="metric"><b>8</b><span>TRANSCRIPT-GROUNDED SUMMARIES</span></div>
+          <div class="metric"><b>2</b><span>DISCLOSED FALLBACKS</span></div>
+        </div>
+        <p class="proof-note">Every one of the ten sections carries a source-note. The two fallbacks disclose their basis; the eight grounded sections name theirs. That ratio &mdash; and the honesty about it &mdash; is the deliverable this report exists to explain.</p>
+      </div>
+    </section>
+
+    <section class="timeline-wrap" aria-labelledby="timeline-title">
+      <div class="timeline-head">
+        <div class="case-label">THE SHORT VERSION</div>
+        <h2 id="timeline-title">One link in seven turns</h2>
+        <p>Each video took the same seven turns. The only turn that could fail was the third &mdash; and the pipeline carries two plans for when it does.</p>
+      </div>
+      <ol class="timeline">
+        <li><div class="time">TURN 01</div><div class="rail"><span class="dot"></span></div><div class="event"><h3>A URL lands in chat</h3><p>A YouTube link arrives &mdash; sometimes with nothing but the bare URL.</p></div></li>
+        <li><div class="time">TURN 02</div><div class="rail"><span class="dot"></span></div><div class="event"><h3>Identify it</h3><p>The oEmbed endpoint returns the real title and author with no authentication. Identity before content.</p></div></li>
+        <li><div class="time">TURN 03</div><div class="rail"><span class="dot"></span></div><div class="event"><h3>Try YouTube captions</h3><p><code>yt-dlp --write-auto-subs --sub-langs en</code>, two careful attempts &mdash; then stop. Retries escalate the block.</p></div></li>
+        <li><div class="time">TURN 04</div><div class="rail"><span class="dot"></span></div><div class="event"><h3>Read the wall</h3><p>429, then &ldquo;sign in to confirm you&rsquo;re not a bot.&rdquo; Side doors &mdash; Invidious, Piped, timedtext, aggregators &mdash; were all tried and failed.</p></div></li>
+        <li><div class="time">TURN 05</div><div class="rail"><span class="dot"></span></div><div class="event"><h3>Fall back</h3><p>If the show has a podcast feed, fetch the RSS, download the MP3, and transcribe locally with faster-whisper. If not, build from the description, chapters, and press coverage &mdash; and say so.</p></div></li>
+        <li><div class="time">TURN 06</div><div class="rail"><span class="dot"></span></div><div class="event"><h3>Write it in prose</h3><p>Flowing paragraphs, channel and title named first, open questions at the end, and a source-note stating the grounding.</p></div></li>
+        <li><div class="time">TURN 07</div><div class="rail"><span class="dot"></span></div><div class="event"><h3>Tab, push, verify</h3><p>Add the tab button and panel, bump the header and grid, push <code>index.html</code> to main, and confirm the live page renders.</p></div></li>
+      </ol>
+    </section>
+
+    <section class="lessons" id="lessons">
+      <div class="lessons-inner">
+        <div>
+          <div class="case-label">FIELD NOTES</div>
+          <h2>What this pipeline taught</h2>
+        </div>
+        <ol class="notes">
+          <li><strong>Identity before content.</strong> One cheap oEmbed call names the video before anything is read. It caught a researcher about to summarize the wrong episode entirely.</li>
+          <li><strong>YouTube&rsquo;s bot-wall is probabilistic, and retries escalate.</strong> Two careful attempts tell you as much as twenty &mdash; the twentieth is the one that gets the IP blacklisted for the rest of the day.</li>
+          <li><strong>The podcast feed is the second door.</strong> RSS, plain MP3, local transcription: no bot-wall, no sign-in, no JavaScript. It only works when the show publishes one &mdash; which is why the solo-creator video stayed transcript-free.</li>
+          <li><strong>Environment quirks are real bugs.</strong> A crashing model download looked like a network failure and was actually <code>httpx</code> choking on <code>[::1]</code> in <code>no_proxy</code>. Name the quirk, log the fix.</li>
+          <li><strong>Disclosure is a feature.</strong> A source-note turns a limitation into verifiable provenance. &ldquo;Based on the description and press coverage&rdquo; is a sentence the reader can work with; a confident guess with no source is not.</li>
+        </ol>
+      </div>
+      <div class="lessons-inner" style="margin-top:2rem">
+        <div></div>
+        <div class="evidence" style="max-width:44rem">
+          <strong>Questions this report leaves open, for whoever reads it:</strong><br /><br />
+          When the transcript is unavailable, is a disclosed description-based summary better than no summary at all &mdash; or should the tab wait?<br /><br />
+          If the bot-wall is probabilistic, is hammering retries honest engineering &mdash; or just wearing down someone else&rsquo;s rate limit?<br /><br />
+          And when a pipeline like this one quotes press coverage instead of the video itself, who owns the provenance of that sentence?
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="credit">Built by <a href="https://muse.ai">Muse</a></div>
+    <div>Technical journey from <a href="https://github.com/az9713/muse-agent-repo-cleanup">muse-agent-repo-cleanup</a> · Personal details removed · Companion to <a href="https://az9713.github.io/today_09172026/">Ten videos, distilled.</a></div>
+  </footer>
+</body>
+</html>
