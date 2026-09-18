@@ -334,8 +334,8 @@
       <dl>
         <div><dt>Repository</dt><dd>today_09172026</dd></div>
         <div><dt>Page</dt><dd>Ten videos, distilled.</dd></div>
-        <div><dt>Transcript-grounded</dt><dd>8 of 10</dd></div>
-        <div><dt>Disclosed fallbacks</dt><dd>2</dd></div>
+        <div><dt>Transcript-grounded</dt><dd>10 of 10</dd></div>
+        <div><dt>Disclosed fallbacks</dt><dd>0</dd></div>
       </dl>
     </aside>
   </header>
@@ -348,6 +348,7 @@
       <a href="#block">Block</a>
       <a href="#fallback">Fallback</a>
       <a href="#honesty">Honesty</a>
+      <a href="#browser">Browser</a>
       <a href="#proof">Proof</a>
       <a href="#lessons">Lessons</a>
     </div>
@@ -432,17 +433,34 @@
           <div class="evidence"><strong>The source-note is a design decision, not decoration.</strong> It lets the reader &mdash; and the human commissioning the page &mdash; assign the right weight to each section. An honest &ldquo;no transcript&rdquo; beats a confident guess every time.</div>
         </div>
       </section>
+      <section class="chapter" id="browser">
+        <div class="chapter-mark"><span class="num">06</span>The browser</div>
+        <div class="copy">
+          <h2>The transcript was on the page the whole time</h2>
+          <p>This chapter is a correction, and it starts with a miss on my part. When the bot-wall closed every automated route &mdash; yt-dlp 429s, empty Invidious bodies, dead Piped endpoints, the audio proxy walled by Cloudflare &mdash; I went down the API rabbit hole and never looked up at the obvious path. YouTube puts a <strong>&ldquo;Show transcript&rdquo; button right there on the watch page</strong>, under the description, on every video that has captions. A real browser session opening the ordinary watch page is not an API client scraping an endpoint; it plays by normal-page rules, and normal-page rules are not what the bot-wall is guarding. The person commissioning the page said it in one sentence &mdash; use computer use, click &ldquo;Show transcript,&rdquo; copy the text &mdash; and that broke the logjam that six clever workarounds had not.</p>
+          <p>What happened next was deliberately unglamorous. A live browser session opened each watch page, expanded the description, clicked &ldquo;Show transcript,&rdquo; scrolled the panel to the bottom to confirm it had fully loaded, and copied the complete text. No sign-in, no cookie banners, no special flags. The Benioff Dreamforce interview came back whole, 0:05 through 39:40 of a 39:48 video. The Mesarich Claude breakdown came back whole, 0:00 through 8:44 of an 8:47 video. Both transcripts are YouTube&rsquo;s own auto-generated captions, quirks and all &mdash; Benioff rendered as &ldquo;Beni off,&rdquo; Anthropic as &ldquo;Enthropic&rdquo; &mdash; copied verbatim and unedited, which is exactly what a grounding source should be.</p>
+          <p>Both sections were then rewritten from the real transcripts, and the rewrite was not polish &mdash; it was substance. The Benioff section had been an enterprise-AI story built from press coverage; the transcript showed the actual conversation was an AI-safety debate, with Sacks&rsquo;s three regulatory paths, the Vatican printing-press analogy, Friedberg&rsquo;s &ldquo;$50 or 15 cents for a million tokens&rdquo; framing, and Chamath&rsquo;s peer-review proposal. The Mesarich section had been a launch-summary from the description; the transcript showed a hands-on demo with specifics the description never carried &mdash; the &ldquo;Bramble&rdquo; design system, the Zapier MCP workaround for Drip, the honest admission that the merged interface wasn&rsquo;t in his account yet. The source-notes were updated to say exactly how the transcripts were obtained, replacing the old fallback notes.</p>
+          <div class="evidence"><strong>The updated score:</strong> the page is now 10-of-10 transcript-grounded. The two disclosed fallbacks that chapter 05 documented are resolved. The honesty convention didn&rsquo;t change &mdash; the evidence did, and the notes tracked it, exactly the way chapter 05 said they should.</div>
+          <p>The pipeline diagram from chapter 01 gains a new turn between the failed caption attempt and the fallback: <em>open the watch page in a real browser and click &ldquo;Show transcript.&rdquo;</em> It belongs before the podcast-RSS fallback in the order of operations, because it costs nothing, needs no feed, and works for solo creators with no podcast at all &mdash; which is precisely the case where the old pipeline gave up. The lesson is less technical than procedural: when every programmatic door is locked, check whether the human door was open all along.</p>
+          <div class="evidence">
+            <strong>Questions this chapter leaves open, for whoever reads it:</strong><br /><br />
+            Should this report close out at 10-of-10, or is there a chapter still missing &mdash; the podcast episode this whole pipeline also produced?<br /><br />
+            Does the field-notes list need a sixth lesson &mdash; &ldquo;check the human door&rdquo; &mdash; or is the miss itself the lesson, worth keeping verbatim?<br /><br />
+            And now that a browser session can copy any transcript on demand, is there still a case where &ldquo;no transcript&rdquo; is the honest answer &mdash; or has the honest fallback moved somewhere else entirely?
+          </div>
+        </div>
+      </section>
     </div>
 
     <section class="proof" id="proof">
       <div class="proof-inner">
         <h2>The page is the proof</h2>
-        <p class="proof-intro">Ten summaries went live on <code>az9713.github.io/today_09172026/</code> in one day. Eight rest on full transcripts &mdash; two of them via the podcast-audio fallback when YouTube blocked captions. Two rest on descriptions and press coverage, and their sections say so. The human-in-the-loop shape holds throughout: flowing prose, not bullets; the channel and episode title named before the narration; two to four open questions instead of conclusions; no personal information anywhere.</p>
+        <p class="proof-intro">Ten summaries went live on <code>az9713.github.io/today_09172026/</code> in one day. All ten rest on full transcripts &mdash; two of them via the podcast-audio fallback when YouTube blocked captions, and the final two via a browser session copying the transcript panel straight off the watch page. None rest on descriptions alone. The human-in-the-loop shape holds throughout: flowing prose, not bullets; the channel and episode title named before the narration; two to four open questions instead of conclusions; no personal information anywhere.</p>
         <div class="numbers" aria-label="Pipeline results">
-          <div class="metric"><b>8</b><span>TRANSCRIPT-GROUNDED SUMMARIES</span></div>
-          <div class="metric"><b>2</b><span>DISCLOSED FALLBACKS</span></div>
+          <div class="metric"><b>10</b><span>TRANSCRIPT-GROUNDED SUMMARIES</span></div>
+          <div class="metric"><b>0</b><span>DISCLOSED FALLBACKS</span></div>
         </div>
-        <p class="proof-note">Every one of the ten sections carries a source-note. The two fallbacks disclose their basis; the eight grounded sections name theirs. That ratio &mdash; and the honesty about it &mdash; is the deliverable this report exists to explain.</p>
+        <p class="proof-note">Every one of the ten sections carries a source-note. Two of them were once disclosed fallbacks; a browser pass resolved both, and their notes tracked the change &mdash; chapter 05 documents the fallbacks as they were, chapter 06 tells how they were fixed. That trajectory &mdash; and the honesty about it &mdash; is the deliverable this report exists to explain.</p>
       </div>
     </section>
 
